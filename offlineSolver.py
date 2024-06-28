@@ -38,7 +38,6 @@ class OfflineSolver:
     def evaluate(self, num_runs = 100):
         sum_reward = 0
         for j in range(num_runs):    
-            # print(j)
             sum_reward += self.solve()
         return  sum_reward/num_runs
         
