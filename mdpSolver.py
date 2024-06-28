@@ -9,9 +9,6 @@ class QMDP(OfflineSolver):
     def __init__(self, pomdp, precision = .000000001):
         super(QMDP, self).__init__(pomdp, precision)
         # offline calculation of the policy following MDP value iteration:
-        
-        new_values = np.zeros(len(pomdp.states))
-
         max_iter = 1000
         epsilon = 1e-6
         # for i in range(max_iter):
@@ -25,7 +22,7 @@ class QMDP(OfflineSolver):
         #     if np.all(np.abs(new_values - pomdp.values) < epsilon): # if reach convergence threshold, end early
         #         break
 
-        # try a slightly more optimized version? we only store values for states not state/action pairs so it'll be slightly different.
+        # try a slightly more optimized version? we only store values for states not state/action pairs so it'll be slightly different?.
 
         # new_values = np.zeros(len(pomdp.states))
         # what if i tried to do it like this HAHAH nope i messed smthing up hehe
@@ -70,25 +67,31 @@ class MinMDP(OfflineSolver):
     
     def __init__(self, pomdp, precision = .001):
         super(MinMDP, self).__init__(pomdp, precision)
-        """
-        ***Your code 
-        Remember this is an offline solver, so compute the policy here
-        """
+        # is the only difference the policy computation? using min instead of max
+        max_iter = 1000
+        epsilon = 1e-6
+        new_values = np.zeros(len(pomdp.states))
+        for i in range(max_iter):
+            pomdp.values = np.copy(new_values)
+            new_values = np.min((np.einsum('ase, ase ->as', pomdp.R[:, :, :, 0], pomdp.T) + pomdp.discount * np.dot(pomdp.T, pomdp.values)), axis=0)
+            if np.all(np.abs(new_values - pomdp.values) < epsilon):
+                break
+        self.pomdp = pomdp
     
     def getValue(self, cur_belief):
-        """
-        ***Your code
-        """
-        return 0 #remove this after your implementation
+        # is this literally the same thing?
+        pomdp = self.pomdp
+        q_value = (np.einsum('ase, ase ->as', pomdp.R[:, :, :, 0], pomdp.T) + pomdp.discount * np.dot(pomdp.T, pomdp.values))
+        q_value = np.dot(q_value, cur_belief)
+        value = np.max(q_value)
+        return value
+    
 
     def chooseAction(self, cur_belief):
-        """
-        ***Your code
-        """  
-        return 0 #remove this after your implementation
-
-
-    """
-    ***Your code
-    Add any function, data structure, etc that you want
-    """
+        pomdp = self.pomdp
+        q_value = (np.einsum('ase, ase ->as', pomdp.R[:, :, :, 0], pomdp.T) + pomdp.discount * np.dot(pomdp.T, pomdp.values))
+        cur_belief = cur_belief.reshape(-1) 
+        q_value = np.dot(q_value, cur_belief) 
+        action = np.argmax(q_value, axis=0)
+        return action
+    
